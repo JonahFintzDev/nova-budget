@@ -221,6 +221,7 @@ function onDocClick() {
                     dark
                     :clearable="false"
                     input-class-name="nb-input"
+                    teleport="body"
                   />
                 </div>
               </div>
