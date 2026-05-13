@@ -29,7 +29,10 @@ services:
       PORT: "3000"
       NODE_ENV: development
     volumes:
-      - ./api/src:/app/src
+      - ./api/src/@types:/app/src/@types
+      - ./api/src/classes:/app/src/classes
+      - ./api/src/routes:/app/src/routes
+      - ./api/src/index.ts:/app/src/index.ts
       - ./api/prisma:/app/prisma
       - ./api/prisma.config.ts:/app/prisma.config.ts
       - ./api/package.json:/app/package.json
