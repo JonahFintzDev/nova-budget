@@ -1,0 +1,99 @@
+<script setup lang="ts">
+// node_modules
+import { nextTick, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { RouterView } from 'vue-router';
+
+// classes
+import { fetchNeedsSetup } from '@/classes/router';
+
+// lib
+import { fadeInElement } from '@/lib/gsap';
+import { applyUserThemePreferences, migrateLegacyThemeLocalStorage } from '@/lib/themes';
+import { detectBrowserLocale, setLocale, type LocaleCode } from '@/lib/i18n';
+
+// stores
+import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
+
+// -------------------------------------------------- Data --------------------------------------------------
+const bBooting = ref(true);
+const authStore = useAuthStore();
+const settingsStore = useSettingsStore();
+const { t } = useI18n();
+const appRoot = ref<HTMLElement | null>(null);
+
+// -------------------------------------------------- Methods --------------------------------------------------
+const applyGuestLocale = (): void => {
+  const fallback = detectBrowserLocale();
+  setLocale(fallback);
+  applyUserThemePreferences({
+    autoTheme: true,
+    darkTheme: null,
+    lightTheme: null,
+  });
+};
+
+const applyAuthenticatedSettings = async (): Promise<void> => {
+  try {
+    const settings = await settingsStore.load({ force: true });
+    const locale = (settings.language === 'de' ? 'de' : 'en') as LocaleCode;
+    setLocale(locale);
+    applyUserThemePreferences({
+      autoTheme: settings.autoTheme,
+      darkTheme: settings.darkTheme,
+      lightTheme: settings.lightTheme,
+    });
+  } catch {
+    applyGuestLocale();
+  }
+};
+
+// -------------------------------------------------- Lifecycle --------------------------------------------------
+onMounted(async () => {
+  migrateLegacyThemeLocalStorage();
+  await fetchNeedsSetup();
+  const token = authStore.token;
+  if (token) {
+    await authStore.validate();
+  }
+  if (authStore.bValidated) {
+    await applyAuthenticatedSettings();
+  } else {
+    applyGuestLocale();
+  }
+  bBooting.value = false;
+});
+
+watch(
+  () => authStore.bValidated,
+  async (ok, was) => {
+    if (bBooting.value) {
+      return;
+    }
+    if (ok && was === false) {
+      await applyAuthenticatedSettings();
+    }
+    if (!ok && was === true) {
+      settingsStore.clear();
+      applyGuestLocale();
+    }
+  },
+);
+
+watch(bBooting, async (boot) => {
+  if (!boot) {
+    await nextTick();
+    fadeInElement(appRoot.value);
+  }
+});
+</script>
+
+<template>
+  <div v-if="bBooting" class="flex h-dvh items-center justify-center bg-bg text-text-muted">
+    {{ t('common.loading') }}
+  </div>
+  <div v-else ref="appRoot" class="min-h-dvh">
+    <RouterView />
+  </div>
+</template>

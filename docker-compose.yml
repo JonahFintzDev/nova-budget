@@ -1,0 +1,33 @@
+name: nova-budget
+services:
+  nova-budget:
+    build: .
+    ports:
+      - '3090:3000'
+    env_file: .env
+    environment:
+      HOME: /config
+    volumes:
+      - ~/.nova-budget/config:/config
+    depends_on:
+      - postgres
+    networks:
+      - nova-budget
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-nova_budget}
+    volumes:
+      - nova-budget-postgres-data:/var/lib/postgresql/data
+    networks:
+      - nova-budget
+
+volumes:
+  nova-budget-postgres-data:
+    name: nova-budget-postgres-data
+
+networks:
+  nova-budget:
