@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import ApiOfflineBanner from '@/components/shared/ApiOfflineBanner.vue';
@@ -12,9 +12,14 @@ import { useBudgetStore } from '@/stores/budget';
 const route = useRoute();
 const { t } = useI18n();
 const budgetStore = useBudgetStore();
+const sidebarOpen = ref(false);
 
 onMounted(() => {
   budgetStore.init();
+});
+
+watch(route, () => {
+  sidebarOpen.value = false;
 });
 
 const pageTitle = computed(() => {
@@ -29,10 +34,16 @@ const pageTitle = computed(() => {
 
 <template>
   <div class="app">
-    <NavSidebar />
+    <!-- Mobile sidebar backdrop -->
+    <Transition name="nb-backdrop">
+      <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false" />
+    </Transition>
+
+    <NavSidebar :is-open="sidebarOpen" @close="sidebarOpen = false" />
+
     <div class="main">
       <ApiOfflineBanner />
-      <NavTopBar :title="pageTitle" />
+      <NavTopBar :title="pageTitle" @menu-toggle="sidebarOpen = !sidebarOpen" />
       <div class="canvas">
         <RouterView />
       </div>

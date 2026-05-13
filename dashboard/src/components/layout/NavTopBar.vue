@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Settings, LogOut } from 'lucide-vue-next';
+import { Menu, Settings, LogOut } from 'lucide-vue-next';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { dropdownEnter, dropdownLeave } from '@/lib/gsap';
 import { useAuthStore } from '@/stores/auth';
 
 defineProps<{ title: string }>();
+const emit = defineEmits<{ menuToggle: [] }>();
 
 const authStore = useAuthStore();
 const bMenu = ref(false);
@@ -31,7 +32,12 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
 
 <template>
   <header class="topbar">
+    <button class="topbar-hamburger" aria-label="Open menu" @click="emit('menuToggle')">
+      <Menu :size="20" />
+    </button>
+
     <div class="topbar-title">{{ title }}</div>
+
     <div class="topbar-right">
       <div ref="menuRoot" style="position:relative">
         <div class="nb-avatar" @click.stop="bMenu = !bMenu">{{ initial() }}</div>

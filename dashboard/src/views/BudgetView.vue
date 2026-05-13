@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Plus, Search, Pencil, MoreVertical, Tag, Wallet } from 'lucide-vue-next';
+import { Plus, Search, Pencil, MoreVertical, Tag, Wallet, BarChart2, ArrowLeft } from 'lucide-vue-next';
 import { useBudgetStore } from '@/stores/budget';
 import {
-  fmtMoney, fmtMoneyShort, longDate, shortDate,
+  fmtMoney, fmtMoneyShort, longDate, shortDate, isoDate,
   parseDate, periodFor, spentInPeriod, daysUntilReset, ordinal,
 } from '@/lib/budget';
 import CategoryChip from '@/components/budget/CategoryChip.vue';
 import ProgressBar from '@/components/budget/ProgressBar.vue';
+import BudgetAreaChart from '@/components/budget/BudgetAreaChart.vue';
 import type { Category, Transaction } from '@/@types/index';
 
 const store = useBudgetStore();
@@ -17,7 +18,22 @@ const router = useRouter();
 const today = new Date();
 const search = ref('');
 
+// ── Mobile detection ──────────────────────────────────────────
+
+const isMobile = ref(window.innerWidth < 768);
+const onResize = () => { isMobile.value = window.innerWidth < 768; };
+onMounted(() => window.addEventListener('resize', onResize));
+onUnmounted(() => window.removeEventListener('resize', onResize));
+
+// ── Chart toggle (localStorage persisted) ────────────────────
+
+const CHART_KEY = 'nova-budget-cat-chart-visible';
+const showChart = ref(localStorage.getItem(CHART_KEY) !== 'false');
+watch(showChart, (v) => localStorage.setItem(CHART_KEY, String(v)));
+
 // ── Selected category ─────────────────────────────────────────
+
+const hasCategoryParam = computed(() => !!route.params.categoryId);
 
 const selectedId = computed(() => {
   const param = route.params.categoryId as string | undefined;
@@ -31,6 +47,7 @@ const selected = computed<Category | null>(
 );
 
 watch(selectedId, (id) => {
+  if (isMobile.value) return;
   if (id && route.params.categoryId !== id) {
     router.replace({ name: 'budget-category', params: { categoryId: id } });
   }
@@ -38,6 +55,10 @@ watch(selectedId, (id) => {
 
 function selectCat(id: string) {
   router.push({ name: 'budget-category', params: { categoryId: id } });
+}
+
+function goBack() {
+  router.push({ name: 'budget' });
 }
 
 // ── Search filter ─────────────────────────────────────────────
@@ -70,6 +91,29 @@ const detail = computed(() => {
       .filter(Boolean),
   )];
   return { start, end, periodTx, spent, tags };
+});
+
+// ── Chart data ────────────────────────────────────────────────
+
+const catChartData = computed<{ series: number[]; categories: string[] }>(() => {
+  if (!selected.value || !detail.value) return { series: [], categories: [] };
+  const { start, periodTx } = detail.value;
+  const byDay: Record<string, number> = {};
+  periodTx.forEach((t) => {
+    byDay[t.date] = (byDay[t.date] ?? 0) + t.price;
+  });
+  const series: number[] = [];
+  const categories: string[] = [];
+  let cum = 0;
+  const d = new Date(start);
+  while (d <= today) {
+    const iso = isoDate(d);
+    cum += byDay[iso] ?? 0;
+    series.push(cum);
+    categories.push(String(d.getDate()));
+    d.setDate(d.getDate() + 1);
+  }
+  return { series, categories };
 });
 
 // ── Grouped transactions ─────────────────────────────────────
@@ -121,7 +165,7 @@ const catMeta = (cat: Category): string => {
 <template>
   <div class="budget-layout">
     <!-- LEFT: Category rail -->
-    <aside class="cat-rail">
+    <aside class="cat-rail" :class="{ 'mobile-hidden': hasCategoryParam }">
       <div class="cat-rail-header">
         <div class="h-title">Categories</div>
         <button class="btn-icon" aria-label="New category" @click="store.openNewCategory()">
@@ -150,7 +194,7 @@ const catMeta = (cat: Category): string => {
           v-for="cat in filtered"
           :key="cat.id"
           class="cat-card"
-          :class="{ active: cat.id === selectedId }"
+          :class="{ active: cat.id === selectedId && !isMobile }"
           @click="selectCat(cat.id)"
         >
           <CategoryChip :icon="cat.icon" :color="cat.color" />
@@ -171,7 +215,7 @@ const catMeta = (cat: Category): string => {
     </aside>
 
     <!-- RIGHT: Detail pane -->
-    <section class="cat-detail">
+    <section class="cat-detail" :class="{ 'mobile-hidden': !hasCategoryParam }">
       <!-- Empty: no categories -->
       <div v-if="store.categories.length === 0" class="empty-state">
         <div class="empty-icon"><Wallet :size="26" /></div>
@@ -185,6 +229,11 @@ const catMeta = (cat: Category): string => {
       </div>
 
       <template v-else-if="selected && detail">
+        <!-- Mobile back button -->
+        <button class="mobile-back-btn" @click="goBack()">
+          <ArrowLeft :size="16" /> Categories
+        </button>
+
         <!-- Hero row -->
         <div class="detail-hero">
           <CategoryChip :icon="selected.icon" :color="selected.color" size="lg" />
@@ -196,6 +245,14 @@ const catMeta = (cat: Category): string => {
             </div>
           </div>
           <div class="actions">
+            <button
+              class="btn btn-secondary"
+              :class="{ active: showChart }"
+              :title="showChart ? 'Hide chart' : 'Show chart'"
+              @click="showChart = !showChart"
+            >
+              <BarChart2 :size="14" /> Chart
+            </button>
             <button class="btn btn-secondary" @click="store.openEditCategory(selected)">
               <Pencil :size="14" /> Edit category
             </button>
@@ -207,7 +264,6 @@ const catMeta = (cat: Category): string => {
 
         <!-- Stats 3-col -->
         <div class="detail-stats">
-          <!-- Spent this period -->
           <div class="stat-card">
             <span class="stat-label">Spent this period</span>
             <span class="stat-value">{{ fmtMoney(detail.spent) }}</span>
@@ -219,7 +275,6 @@ const catMeta = (cat: Category): string => {
             </span>
           </div>
 
-          <!-- Remaining -->
           <div class="stat-card">
             <span class="stat-label">Remaining</span>
             <span class="stat-value" :style="isOverBudget ? 'color:var(--danger)' : ''">
@@ -236,7 +291,6 @@ const catMeta = (cat: Category): string => {
             </span>
           </div>
 
-          <!-- Period -->
           <div class="stat-card">
             <span class="stat-label">Period</span>
             <span class="stat-value" style="font-size:18px">{{ periodStr }}</span>
@@ -247,6 +301,28 @@ const catMeta = (cat: Category): string => {
         <!-- Full-width progress bar -->
         <div v-if="selected.limit != null" style="margin-bottom:28px">
           <ProgressBar :value="detail.spent" :max="selected.limit" :color="selected.color" />
+        </div>
+
+        <!-- Optional spending chart -->
+        <div v-if="showChart" class="card" style="padding:20px;margin-bottom:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div class="h-title">Spending over time</div>
+            <div style="font-size:12px;color:var(--fg-3)">Cumulative spend this period</div>
+          </div>
+          <BudgetAreaChart
+            v-if="catChartData.series.length > 0"
+            :series="catChartData.series"
+            :categories="catChartData.categories"
+            :color="selected.color"
+            :height="180"
+            series-name="Cumulative spend"
+          />
+          <div
+            v-else
+            style="height:100px;display:flex;align-items:center;justify-content:center;color:var(--fg-4);font-size:13px"
+          >
+            No spending data yet this period
+          </div>
         </div>
 
         <!-- Tags row -->

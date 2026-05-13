@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Folder, X, Trash2, ChevronDown } from 'lucide-vue-next';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 import type { Transaction } from '@/@types/index';
 import { todayIso } from '@/lib/budget';
 import CategoryChip from '@/components/budget/CategoryChip.vue';
@@ -211,10 +213,14 @@ function onDocClick() {
                 <!-- Date -->
                 <div class="nb-field">
                   <span class="nb-field-label">Date</span>
-                  <input
+                  <VueDatePicker
                     v-model="draft.date"
-                    type="date"
-                    class="nb-input"
+                    model-type="yyyy-MM-dd"
+                    :enable-time-picker="false"
+                    auto-apply
+                    dark
+                    :clearable="false"
+                    input-class-name="nb-input"
                   />
                 </div>
               </div>

@@ -3,6 +3,9 @@ import { LayoutDashboard, Wallet, Settings, Shield } from 'lucide-vue-next';
 import { RouterLink, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
+defineProps<{ isOpen?: boolean }>();
+const emit = defineEmits<{ close: [] }>();
+
 const authStore = useAuthStore();
 const route = useRoute();
 
@@ -11,7 +14,7 @@ const isBudget = () =>
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ open: isOpen }">
     <!-- Brand -->
     <div class="brand">
       <div class="brand-icon">€</div>
@@ -26,6 +29,7 @@ const isBudget = () =>
       to="/"
       class="nav-item"
       :class="{ active: route.name === 'home' }"
+      @click="emit('close')"
     >
       <LayoutDashboard :size="18" :stroke-width="2" />
       <span>Home</span>
@@ -35,6 +39,7 @@ const isBudget = () =>
       to="/budget"
       class="nav-item"
       :class="{ active: isBudget() }"
+      @click="emit('close')"
     >
       <Wallet :size="18" :stroke-width="2" />
       <span>Budget</span>
@@ -46,6 +51,7 @@ const isBudget = () =>
         to="/settings"
         class="nav-item"
         :class="{ active: route.name === 'settings' }"
+        @click="emit('close')"
       >
         <Settings :size="18" :stroke-width="2" />
         <span>Settings</span>
@@ -56,6 +62,7 @@ const isBudget = () =>
         to="/admin"
         class="nav-item"
         :class="{ active: route.name === 'admin' }"
+        @click="emit('close')"
       >
         <Shield :size="18" :stroke-width="2" />
         <span>Admin</span>
