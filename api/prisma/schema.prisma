@@ -21,6 +21,8 @@ model User {
 
   pushSubscriptions PushSubscription[]
   apiKeys           ApiKey[]
+  categories        Category[]
+  transactions      Transaction[]
 }
 
 model AppSettings {
@@ -49,4 +51,35 @@ model ApiKey {
   lastUsedAt DateTime?
 
   @@index([userId])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  icon         String
+  color        String
+  resetDay     Int
+  limit        Float?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  tag        String   @default("")
+  price      Float
+  date       String
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([categoryId])
 }

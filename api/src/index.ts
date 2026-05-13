@@ -14,10 +14,12 @@ import { config } from './classes/config';
 // routes
 import { adminRoutes } from './routes/admin';
 import { authRoutes } from './routes/auth';
+import { categoriesRoutes } from './routes/categories';
 import { healthRoutes } from './routes/health';
 import { keysRoutes } from './routes/keys';
 import { pushRoutes } from './routes/push';
 import { settingsRoutes } from './routes/settings';
+import { transactionsRoutes } from './routes/transactions';
 
 import { ensureVapidKeys } from './classes/push';
 
@@ -69,6 +71,8 @@ const main = async (): Promise<void> => {
   await fastify.register(adminRoutes);
   await fastify.register(pushRoutes);
   await fastify.register(keysRoutes);
+  await fastify.register(categoriesRoutes);
+  await fastify.register(transactionsRoutes);
 
   if (config.isProduction) {
     const staticRoot = config.dashboardDistPath;

@@ -1,6 +1,7 @@
 export default {
   nav: {
     home: 'Start',
+    budget: 'Budget',
     settings: 'Einstellungen',
     admin: 'Administration',
     logout: 'Abmelden',

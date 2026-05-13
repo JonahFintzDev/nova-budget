@@ -44,6 +44,18 @@ const routes: RouteRecordRaw[] = [
         meta: { titleKey: 'nav.home' },
       },
       {
+        path: 'budget',
+        name: 'budget',
+        component: () => import('@/views/BudgetView.vue'),
+        meta: { titleKey: 'nav.budget' },
+      },
+      {
+        path: 'budget/:categoryId',
+        name: 'budget-category',
+        component: () => import('@/views/BudgetView.vue'),
+        meta: { titleKey: 'nav.budget' },
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/views/SettingsView.vue'),

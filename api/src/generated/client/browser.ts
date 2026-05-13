@@ -37,3 +37,13 @@ export type PushSubscription = Prisma.PushSubscriptionModel
  * 
  */
 export type ApiKey = Prisma.ApiKeyModel
+/**
+ * Model Category
+ * 
+ */
+export type Category = Prisma.CategoryModel
+/**
+ * Model Transaction
+ * 
+ */
+export type Transaction = Prisma.TransactionModel

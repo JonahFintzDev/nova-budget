@@ -1,56 +1,45 @@
 <script setup lang="ts">
-// node_modules
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { computed, onMounted } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
-
-// lib
-import { pageEnter, pageLeave } from '@/lib/gsap';
-
-// components
+import { useI18n } from 'vue-i18n';
 import ApiOfflineBanner from '@/components/shared/ApiOfflineBanner.vue';
 import NavSidebar from '@/components/layout/NavSidebar.vue';
 import NavTopBar from '@/components/layout/NavTopBar.vue';
+import CategoryModal from '@/components/budget/CategoryModal.vue';
+import ItemModal from '@/components/budget/ItemModal.vue';
+import { useBudgetStore } from '@/stores/budget';
 
-// -------------------------------------------------- Data --------------------------------------------------
 const route = useRoute();
 const { t } = useI18n();
-const navSidebarRef = ref<{ openDrawer: () => void } | null>(null);
+const budgetStore = useBudgetStore();
 
-// -------------------------------------------------- Methods --------------------------------------------------
-const openNavDrawer = (): void => {
-  navSidebarRef.value?.openDrawer();
-};
+onMounted(() => {
+  budgetStore.init();
+});
 
-// -------------------------------------------------- Computed --------------------------------------------------
 const pageTitle = computed(() => {
   const name = route.name;
-  if (name === 'home') {
-    return t('nav.home');
-  }
-  if (name === 'settings') {
-    return t('settings.title');
-  }
-  if (name === 'admin') {
-    return t('admin.title');
-  }
+  if (name === 'home') return t('nav.home');
+  if (name === 'budget' || name === 'budget-category') return t('nav.budget');
+  if (name === 'settings') return t('settings.title');
+  if (name === 'admin') return t('admin.title');
   return 'Nova Budget';
 });
 </script>
 
 <template>
-  <div class="app-shell relative z-10 flex bg-bg text-text-primary">
-    <NavSidebar ref="navSidebarRef" />
-    <div class="flex min-w-0 flex-1 flex-col lg:ms-0">
+  <div class="app">
+    <NavSidebar />
+    <div class="main">
       <ApiOfflineBanner />
-      <NavTopBar :title="pageTitle" @menu="openNavDrawer" />
-      <main class="relative z-0 min-h-0 flex-1 overflow-y-auto">
-        <RouterView v-slot="{ Component }">
-          <Transition mode="out-in" :css="false" @enter="pageEnter" @leave="pageLeave">
-            <component :is="Component" :key="route.fullPath" />
-          </Transition>
-        </RouterView>
-      </main>
+      <NavTopBar :title="pageTitle" />
+      <div class="canvas">
+        <RouterView />
+      </div>
     </div>
   </div>
+
+  <!-- Global budget modals -->
+  <CategoryModal />
+  <ItemModal />
 </template>

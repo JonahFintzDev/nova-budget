@@ -232,6 +232,100 @@ const touchApiKeyUsage = async (id: string): Promise<void> => {
   await _prisma.apiKey.update({ where: { id }, data: { lastUsedAt: new Date() } });
 };
 
+// -------------------------------------------------- Categories --------------------------------------------------
+
+const listCategories = async (userId: string) => {
+  return _prisma.category.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true, icon: true, color: true, resetDay: true, limit: true },
+  });
+};
+
+const createCategory = async (
+  userId: string,
+  data: { name: string; icon: string; color: string; resetDay: number; limit?: number | null },
+) => {
+  return _prisma.category.create({
+    data: { userId, ...data },
+    select: { id: true, name: true, icon: true, color: true, resetDay: true, limit: true },
+  });
+};
+
+const updateCategory = async (
+  id: string,
+  userId: string,
+  data: Partial<{ name: string; icon: string; color: string; resetDay: number; limit: number | null }>,
+) => {
+  try {
+    return await _prisma.category.update({
+      where: { id, userId },
+      data,
+      select: { id: true, name: true, icon: true, color: true, resetDay: true, limit: true },
+    });
+  } catch {
+    return null;
+  }
+};
+
+const deleteCategory = async (id: string, userId: string): Promise<boolean> => {
+  try {
+    await _prisma.category.delete({ where: { id, userId } });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// -------------------------------------------------- Transactions --------------------------------------------------
+
+const listTransactions = async (userId: string, categoryId?: string) => {
+  return _prisma.transaction.findMany({
+    where: { userId, ...(categoryId ? { categoryId } : {}) },
+    orderBy: { date: 'desc' },
+    select: { id: true, categoryId: true, name: true, tag: true, price: true, date: true },
+  });
+};
+
+const createTransaction = async (
+  userId: string,
+  data: { categoryId: string; name: string; tag?: string; price: number; date: string },
+) => {
+  const catExists = await _prisma.category.findFirst({
+    where: { id: data.categoryId, userId },
+  });
+  if (!catExists) return null;
+  return _prisma.transaction.create({
+    data: { userId, tag: '', ...data },
+    select: { id: true, categoryId: true, name: true, tag: true, price: true, date: true },
+  });
+};
+
+const updateTransaction = async (
+  id: string,
+  userId: string,
+  data: Partial<{ categoryId: string; name: string; tag: string; price: number; date: string }>,
+) => {
+  try {
+    return await _prisma.transaction.update({
+      where: { id, userId },
+      data,
+      select: { id: true, categoryId: true, name: true, tag: true, price: true, date: true },
+    });
+  } catch {
+    return null;
+  }
+};
+
+const deleteTransaction = async (id: string, userId: string): Promise<boolean> => {
+  try {
+    await _prisma.transaction.delete({ where: { id, userId } });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // -------------------------------------------------- Export --------------------------------------------------
 
 export const db = {
@@ -255,4 +349,12 @@ export const db = {
   deleteApiKey,
   findApiKeyByRawKey,
   touchApiKeyUsage,
+  listCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  listTransactions,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
 };
