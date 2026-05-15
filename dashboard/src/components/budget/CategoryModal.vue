@@ -64,22 +64,23 @@ const previewCat = computed(() => ({
 
 const canSubmit = computed(() => draft.value.name.trim().length > 0);
 
-function submit() {
+async function submit() {
   if (!canSubmit.value) return;
-  const id = store.saveCategoryModal({
+  const currentMode = mode.value;
+  const id = await store.saveCategoryModal({
     name: draft.value.name.trim(),
     icon: draft.value.icon,
     color: draft.value.color,
     resetDay: draft.value.resetDay,
     limit: draft.value.limit === '' ? null : Math.max(0, Number(draft.value.limit)),
   });
-  if (mode.value === 'create' && id) {
+  if (currentMode === 'create' && id) {
     router.push({ name: 'budget-category', params: { categoryId: id } });
   }
 }
 
-function handleDelete() {
-  store.deleteCategoryModal();
+async function handleDelete() {
+  await store.deleteCategoryModal();
 }
 
 function onBackdropClick(e: MouseEvent) {

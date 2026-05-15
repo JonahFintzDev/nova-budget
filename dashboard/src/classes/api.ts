@@ -2,7 +2,7 @@
 import axios, { type AxiosInstance } from 'axios';
 
 // types
-import type { ApiKey, ApiKeyWithPlainKey, AppSettings, User, UserSettings } from '@/@types/index';
+import type { ApiKey, ApiKeyWithPlainKey, AppSettings, Category, Transaction, User, UserSettings } from '@/@types/index';
 
 const TOKEN_KEY = 'nova-budget-token';
 
@@ -174,6 +174,41 @@ export const adminApi = {
   async updateSettings(payload: Partial<AppSettings>): Promise<AppSettings> {
     const response = await api.patch<AppSettings>('/api/admin/settings', payload);
     return response.data;
+  },
+};
+
+// -------------------------------------------------- Budget --------------------------------------------------
+
+export const budgetApi = {
+  async getCategories(): Promise<Category[]> {
+    const response = await api.get<Category[]>('/api/categories');
+    return response.data;
+  },
+  async createCategory(payload: Omit<Category, 'id'>): Promise<Category> {
+    const response = await api.post<Category>('/api/categories', payload);
+    return response.data;
+  },
+  async updateCategory(id: string, patch: Partial<Omit<Category, 'id'>>): Promise<Category> {
+    const response = await api.patch<Category>(`/api/categories/${id}`, patch);
+    return response.data;
+  },
+  async deleteCategory(id: string): Promise<void> {
+    await api.delete(`/api/categories/${id}`);
+  },
+  async getTransactions(): Promise<Transaction[]> {
+    const response = await api.get<Transaction[]>('/api/transactions');
+    return response.data;
+  },
+  async createTransaction(payload: Omit<Transaction, 'id'>): Promise<Transaction> {
+    const response = await api.post<Transaction>('/api/transactions', payload);
+    return response.data;
+  },
+  async updateTransaction(id: string, patch: Partial<Omit<Transaction, 'id'>>): Promise<Transaction> {
+    const response = await api.patch<Transaction>(`/api/transactions/${id}`, patch);
+    return response.data;
+  },
+  async deleteTransaction(id: string): Promise<void> {
+    await api.delete(`/api/transactions/${id}`);
   },
 };
 

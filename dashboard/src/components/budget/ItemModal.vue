@@ -75,9 +75,9 @@ function selectCategory(id: string) {
   dropdownOpen.value = false;
 }
 
-function submit() {
+async function submit() {
   if (!canSubmit.value) return;
-  store.saveItemModal({
+  await store.saveItemModal({
     categoryId: draft.value.categoryId,
     name: draft.value.name.trim(),
     tag: draft.value.tag.trim(),
@@ -86,8 +86,8 @@ function submit() {
   });
 }
 
-function handleDelete() {
-  store.deleteItemModal();
+async function handleDelete() {
+  await store.deleteItemModal();
 }
 
 function onBackdropClick(e: MouseEvent) {
